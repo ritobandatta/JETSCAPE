@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+
+<jetscape>
+
+  <nEvents> 10000</nEvents>
+  <vlevel> 0 </vlevel>
+  <nEvents_printout> 1 </nEvents_printout>
+  
+  <!-- Jetscape Writer -->
+  <JetScapeWriterAscii> on </JetScapeWriterAscii>
+  <outputFilename>QHAT_TABLE_TRIAL</outputFilename>   
+
+
+ <Random>
+    <seed>0</seed>
+  </Random>
+
+  <IS>
+    <Trento>	  
+    <CutInputs  centrality-low='0'
+          centrality-high='5'>
+    </CutInputs>
+    </Trento>
+  </IS>
+
+  <!-- Hard Process -->
+  <Hard>
+      <PGun>
+        <name>PGun</name>
+        <pT>50</pT>
+      </PGun>
+  </Hard>
+
+  <!--Preequilibrium Dynamics Module -->
+  <Preequilibrium>
+    <NullPreDynamics> </NullPreDynamics>
+  </Preequilibrium>
+
+  <!-- Hydro  Module  -->
+  <Hydro>
+      <hydro_from_file>
+        <name>Hydro from file </name>
+        <read_in_multiple_hydro>1</read_in_multiple_hydro>
+        <hydro_files_folder>../examples/test_hydro_files</hydro_files_folder>
+      </hydro_from_file>
+  </Hydro>
+ 
+  <!--Eloss Modules -->
+  <Eloss>
+    <Matter> 
+      <Q0> 1.0 </Q0>
+      <in_vac> 0 </in_vac>
+      <vir_factor> 0.25 </vir_factor>
+      <recoil_on> 0 </recoil_on>
+      <QhatCone_r> 0.4 </QhatCone_r>
+      <broadening_on> 0 </broadening_on>
+      <brick_med> 0 </brick_med>
+    </Matter>
+  </Eloss>
+  
+  <!-- Jet Hadronization Module -->
+  <JetHadronization>
+    <name>colorless</name>
+  </JetHadronization>
+   
+</jetscape>
