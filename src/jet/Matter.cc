@@ -14,16 +14,13 @@
  ******************************************************************************/
 
 #include "Matter.h"
-#include "JetScapeLogger.h"
-#include "JetScapeParticles.h"
-#include "Pythia8/Pythia.h"
-
-#include <string>
-
-#include <iostream>
-
-#include "FluidDynamics.h"
-#include <GTL/dfs.h>
+//#include "JetScapeLogger.h"
+//#include "JetScapeParticles.h"
+//#include "Pythia8/Pythia.h" 
+//#include <string>
+//#include <iostream>
+//#include "FluidDynamics.h"
+//#include <GTL/dfs.h>
 
 #define MAGENTA "\033[35m"
 
@@ -141,6 +138,7 @@ void Matter::Init() {
   qhatD = GetXMLElementDouble({"Eloss", "Matter", "qhatD"});
   tStart = GetXMLElementDouble({"Eloss", "tStart"});
   //run_alphas = GetXMLElementInt({"Eloss", "Matter", "run_alphas"});
+  QhatCone_r=GetXMLElementInt({"Eloss","Matter","QhatCone_r"});
   QhatParametrizationType=GetXMLElementInt({"Eloss", "Matter", "QhatParametrizationType"});
   hydro_Tc = GetXMLElementDouble({"Eloss", "Matter", "hydro_Tc"});
   brick_length = GetXMLElementDouble({"Eloss", "Matter", "brick_length"});
@@ -333,7 +331,9 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
     VERBOSE(2) << BOLDYELLOW << " velocityMod = " << velocityMod;
 
     if (pIn[i].form_time() < 0.0)
+    {
       pIn[i].set_jet_v(velocity); // jet velocity is set only once
+    }
     // Notice the assumption that partons passed from hard scattering are on shell.
     // If they had virtuality then this would not be correct.
 
@@ -411,18 +411,21 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
     }
 
     initEner = pIn[i].e(); // initial Energy of parton
-    if (!in_vac) {
-      if (GetJetSignalConnected())
-        length = fillQhatTab(SpatialRapidity);
-      else {
-        JSWARN << "Couldn't find a hydro module attached!";
-        throw std::runtime_error(
-            "Please attach a hydro module or set in_vac to 1 in the XML file");
-      }
-    }
-    if (brick_med)
-      length = brick_length *
-               fmToGeVinv; /// length in GeV-1 will have to changed for hydro
+
+//    if (!in_vac) {
+//      if (GetJetSignalConnected())
+//        //length = fillQhatTab(SpatialRapidity);
+//      else {
+//        JSWARN << "Couldn't find a hydro module attached!";
+//        throw std::runtime_error(
+//            "Please attach a hydro module or set in_vac to 1 in the XML file");
+//      }
+//    }
+
+
+//    if (brick_med)
+//      length = brick_length *
+//               fmToGeVinv; /// length in GeV-1 will have to changed for hydro
     //if(brick_med) length = 5.0*fmToGeVinv; /// length in GeV-1 will have to changed for hydro
 
     // SC
@@ -467,6 +470,30 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
     if (pIn[i].form_time() <
         0.0) /// A parton without a virtuality or formation time, must set...
     {
+      if (!in_vac) 
+      {
+        if (GetJetSignalConnected())
+        { 
+	  //JSINFO<<mod_jet_v<<" "<<initVx<<" "<<initVy<<" "<<initVz;  	
+          length = fillQhatTab(SpatialRapidity);
+          //JSINFO<<" IVAN's CALL "<<qhatTab2D[75][75];
+        }
+        else 
+        {
+          JSWARN << "Couldn't find a hydro module attached!";
+          throw std::runtime_error("Please attach a hydro module or set in_vac to 1 in the XML file");
+        }
+      }
+      if (brick_med)
+      {
+        length = brick_length * fmToGeVinv; /// length in GeV-1 will have to changed for hydro
+      }
+    //if(brick_med) length = 5.0*fmToGeVinv; /// length in GeV-1 will have to changed for hydro
+
+
+
+      //length = fillQhatTab(SpatialRapidity);
+      //JSINFO<< " PRINTED VALUE "<< qhatTab2D[80][80];
 
       VERBOSE(8) << BOLDYELLOW << " pid = " << pIn[i].pid()
                  << " E = " << pIn[i].e();
@@ -3768,26 +3795,140 @@ double Matter::profile(double zeta) {
   return (prof);
 }
 
+
+// Function to create the other cone axis
+//void rotateAxis(double initVx, double initVy, double initVz, double (&axis1)[3], double (&axis2)[3],double (&axis3)[3],double (&axis4)[3]) 
+//{
+    //converting my jet axis to tvector
+//    TVector3 original_axis(initVx,initVy,initVz);
+    
+    //obtaining perpendicular to jet axis, by doing cross product
+//    TVector3 arbitraryVector(1,0,0);
+    //Calculate perpendicular by taking cross product 
+//    TVector3 perpendicular_original_axis1 = original_axis.Cross(arbitraryVector);
+
+
+    //rotate the 1st perpendicular axis to get 2d perpendcular axis to jet direction
+//    TRotation rotation;
+//    rotation.Rotate(TMath::Pi()/2, original_axis);
+//    TVector3 perpendicular_original_axis2 = rotation*perpendicular_original_axis1;
+
+    //Now that we have the perpendicular axis of jet axis, we will rotate the jet axis 
+    //about these perpendicular axis by some solid angle, I am fixing it to pi/6
+
+//    rotation.Rotate(TMath::Pi()/6, perpendicular_original_axis1);
+//    TVector3 final_axis1 = rotation*original_axis; //first axis
+//    rotation.Rotate(-1*TMath::Pi()/6, perpendicular_original_axis1);    
+//    TVector3 final_axis2 = rotation*original_axis; //second axis
+//    rotation.Rotate(TMath::Pi()/6, perpendicular_original_axis2);
+//    TVector3 final_axis3 = rotation*original_axis; //third axis
+//    rotation.Rotate(-1*TMath::Pi()/6, perpendicular_original_axis2);
+//    TVector3 final_axis4 = rotation*original_axis; //fourth axis
+
+//  axis1[0]=final_axis1.X();
+//  axis1[1]=final_axis1.Y();
+//  axis1[2]=final_axis1.Z();
+
+//  axis2[0]=final_axis2.X();
+//  axis2[1]=final_axis2.Y();
+//  axis2[2]=final_axis2.Z();
+
+//  axis3[0]=final_axis3.X();
+//  axis3[1]=final_axis3.Y();
+//  axis3[2]=final_axis3.Z();
+
+//  axis4[0]=final_axis4.X();
+//  axis4[1]=final_axis4.Y();
+//  axis4[2]=final_axis4.Z();
+//}
 ////////////////////////////////////////////////////////////////////////////////////////
 
 double Matter::fillQhatTab(double y) {
 
   double xLoc, yLoc, zLoc, tLoc;
+  double xLoc1, yLoc1, zLoc1, tLoc1;
+  double xLoc2, yLoc2, zLoc2, tLoc2;
+  double xLoc3, yLoc3, zLoc3, tLoc3;
+  double xLoc4, yLoc4, zLoc4, tLoc4;        
   double vxLoc, vyLoc, vzLoc, gammaLoc, betaLoc;
-  double edLoc, sdLoc;
-  double tempLoc;
-  double flowFactor, qhatLoc;
+  double vxLoc1, vyLoc1, vzLoc1, gammaLoc1, betaLoc1;
+  double vxLoc2, vyLoc2, vzLoc2, gammaLoc2, betaLoc2;
+  double vxLoc3, vyLoc3, vzLoc3, gammaLoc3, betaLoc3;
+  double vxLoc4, vyLoc4, vzLoc4, gammaLoc4, betaLoc4;
+  double edLoc, sdLoc, edLoc1, sdLoc1,edLoc2, sdLoc2, edLoc3, sdLoc3, edLoc4, sdLoc4;
+  double tempLoc,tempLoc1,tempLoc2,tempLoc3,tempLoc4;
+  double qhatLoc, qhatLoc1, qhatLoc2, qhatLoc3, qhatLoc4;
+  double flowFactor, flowFactor1, flowFactor2, flowFactor3, flowFactor4;
   int hydro_ctl;
   double lastLength = initR0;
+  double axis1[3];
+  double axis2[3];
+  double axis3[3];
+  double axis4[3];
 
   double tStep = 0.1;
 
   std::unique_ptr<FluidCellInfo> check_fluid_info_ptr;
 
+
+///////////////////////////////////////////////////////////////////////
+
+  //four axes around the jet axis
+//  rotateAxis(initVx,initVy,initVz,axis1,axis2,axis3,axis4);
+  TVector3 original_axis(initVx,initVy,initVz);
+    
+    //obtaining perpendicular to jet axis, by doing cross product
+  TVector3 arbitraryVector(0.5,0.5,5);
+    //Calculate perpendicular by taking cross product 
+  TVector3 perpendicular_original_axis1 = original_axis.Cross(arbitraryVector);
+
+
+    //rotate the 1st perpendicular axis to get 2d perpendcular axis to jet direction
+  TRotation rotation;
+  rotation.Rotate(TMath::Pi()/2, original_axis);
+  TVector3 perpendicular_original_axis2 = rotation*perpendicular_original_axis1;
+
+    //Now that we have the perpendicular axis of jet axis, we will rotate the jet axis 
+    //about these perpendicular axis by some solid angle, I am fixing it to pi/6
+
+  rotation.Rotate(QhatCone_r, perpendicular_original_axis1);
+  TVector3 final_axis1 = rotation*original_axis; //first axis
+  rotation.Rotate(-1*QhatCone_r, perpendicular_original_axis1);    
+  TVector3 final_axis2 = rotation*original_axis; //second axis
+  rotation.Rotate(QhatCone_r, perpendicular_original_axis2);
+  TVector3 final_axis3 = rotation*original_axis; //third axis
+  rotation.Rotate(-1*QhatCone_r, perpendicular_original_axis2);
+  TVector3 final_axis4 = rotation*original_axis; //fourth axis
+
+  axis1[0]=final_axis1.X();
+  axis1[1]=final_axis1.Y();
+  axis1[2]=final_axis1.Z();
+
+  axis2[0]=final_axis2.X();
+  axis2[1]=final_axis2.Y();
+  axis2[2]=final_axis2.Z();
+
+  axis3[0]=final_axis3.X();
+  axis3[1]=final_axis3.Y();
+  axis3[2]=final_axis3.Z();
+
+  axis4[0]=final_axis4.X();
+  axis4[1]=final_axis4.Y();
+  axis4[2]=final_axis4.Z();
+
+  /////////////////////////////////////////////
+
   for (int i = 0; i < dimQhatTab; i++) {
     tLoc = tStep * i;
 
     //if(tLoc<initR0-tStep) { // potential problem of making t^2<z^2
+    //double** qhatTab2D = new double*[dimQhatTab];
+    //double* qhatTab1D = new double[dimQhatTab];
+
+    //for(int i =0; i<dimQhatTab;i++)
+    //{
+    //  qhatTab2D[i]=new double[dimQhatTab];
+    //}
 
     double boostedTStart = tStart * std::cosh(y);
     if (tLoc < initR0 || tLoc < boostedTStart) {
@@ -3795,9 +3936,28 @@ double Matter::fillQhatTab(double y) {
       continue;
     }
 
+    //I am not changing the position components when I am rotating the axis
     xLoc = initRx + (tLoc - initR0) * initVx;
     yLoc = initRy + (tLoc - initR0) * initVy;
     zLoc = initRz + (tLoc - initR0) * initVz;
+
+    xLoc1 = initRx + (tLoc - initR0) * axis1[0];
+    yLoc1 = initRy + (tLoc - initR0) * axis1[1];
+    zLoc1 = initRz + (tLoc - initR0) * axis1[2];
+
+    xLoc2 = initRx + (tLoc - initR0) * axis2[0];
+    yLoc2 = initRy + (tLoc - initR0) * axis2[1];
+    zLoc2 = initRz + (tLoc - initR0) * axis2[2];
+
+    xLoc3 = initRx + (tLoc - initR0) * axis3[0];
+    yLoc3 = initRy + (tLoc - initR0) * axis3[1];
+    zLoc3 = initRz + (tLoc - initR0) * axis3[2];
+
+    xLoc4 = initRx + (tLoc - initR0) * axis4[0];
+    yLoc4 = initRy + (tLoc - initR0) * axis4[1];
+    zLoc4 = initRz + (tLoc - initR0) * axis4[2];
+
+
 
     //        if(bulkFlag == 1) { // read OSU hydro
     //            readhydroinfoshanshan_(&tLoc,&xLoc,&yLoc,&zLoc,&edLoc,&sdLoc,&tempLoc,&vxLoc,&vyLoc,&vzLoc,&hydro_ctl);
@@ -3838,6 +3998,34 @@ double Matter::fillQhatTab(double y) {
     vyLoc = check_fluid_info_ptr->vy;
     vzLoc = check_fluid_info_ptr->vz;
 
+    GetHydroCellSignal(tLoc, xLoc1, yLoc1, zLoc1, check_fluid_info_ptr);
+    VERBOSE(8) << MAGENTA << "Temperature from medium = "
+               << check_fluid_info_ptr->temperature;
+
+    tempLoc1 = check_fluid_info_ptr->temperature;
+    sdLoc1 = check_fluid_info_ptr->entropy_density;
+    vxLoc1 = check_fluid_info_ptr->vx;
+    vyLoc1 = check_fluid_info_ptr->vy;
+    vzLoc1 = check_fluid_info_ptr->vz;
+
+    tempLoc2 = check_fluid_info_ptr->temperature;
+    sdLoc2 = check_fluid_info_ptr->entropy_density;
+    vxLoc2 = check_fluid_info_ptr->vx;
+    vyLoc2 = check_fluid_info_ptr->vy;
+    vzLoc2 = check_fluid_info_ptr->vz;
+
+    tempLoc3 = check_fluid_info_ptr->temperature;
+    sdLoc3 = check_fluid_info_ptr->entropy_density;
+    vxLoc3 = check_fluid_info_ptr->vx;
+    vyLoc3 = check_fluid_info_ptr->vy;
+    vzLoc3 = check_fluid_info_ptr->vz;
+
+    tempLoc4 = check_fluid_info_ptr->temperature;
+    sdLoc4 = check_fluid_info_ptr->entropy_density;
+    vxLoc4 = check_fluid_info_ptr->vx;
+    vyLoc4 = check_fluid_info_ptr->vy;
+    vzLoc4 = check_fluid_info_ptr->vz;    
+
     hydro_ctl = 0;
 
     if (hydro_ctl == 0 && tempLoc >= hydro_Tc) {
@@ -3846,6 +4034,23 @@ double Matter::fillQhatTab(double y) {
       gammaLoc = 1.0 / sqrt(1.0 - betaLoc * betaLoc);
       flowFactor =
           gammaLoc * (1.0 - (initVx * vxLoc + initVy * vyLoc + initVz * vzLoc));
+
+      betaLoc1 = sqrt(vxLoc1 * vxLoc1 + vyLoc1 * vyLoc1 + vzLoc1 * vzLoc1);
+      gammaLoc1 = 1.0 / sqrt(1.0 - betaLoc1 * betaLoc1);
+      flowFactor1 = gammaLoc1 * (1.0 - (axis1[0] * vxLoc1 + axis1[1] * vyLoc1 + axis1[2] * vzLoc1));
+
+      betaLoc2 = sqrt(vxLoc2 * vxLoc2 + vyLoc2 * vyLoc2 + vzLoc2 * vzLoc2);
+      gammaLoc2 = 1.0 / sqrt(1.0 - betaLoc2 * betaLoc2);
+      flowFactor2 = gammaLoc2 * (1.0 - (axis2[0] * vxLoc2 + axis2[1] * vyLoc2 + axis2[2] * vzLoc2));
+
+      betaLoc3 = sqrt(vxLoc3 * vxLoc3 + vyLoc3 * vyLoc3 + vzLoc3 * vzLoc3);
+      gammaLoc3 = 1.0 / sqrt(1.0 - betaLoc3 * betaLoc3);
+      flowFactor3 = gammaLoc3 * (1.0 - (axis3[0] * vxLoc3 + axis3[1] * vyLoc3 + axis3[2] * vzLoc3));
+
+      betaLoc4 = sqrt(vxLoc4 * vxLoc4 + vyLoc4 * vyLoc4 + vzLoc4 * vzLoc4);
+      gammaLoc4 = 1.0 / sqrt(1.0 - betaLoc4 * betaLoc4);
+      flowFactor4 = gammaLoc4 * (1.0 - (axis4[0] * vxLoc4 + axis4[1] * vyLoc4 + axis4[2] * vzLoc4));
+
 
       //if(run_alphas==1){ alphas= 4*pi/(9.0*log(2*initEner*tempLoc/0.04));}
 
@@ -3879,13 +4084,29 @@ double Matter::fillQhatTab(double y) {
       qhatLoc= GeneralQhatFunction(QhatParametrizationType, tempLoc, sdLoc, alphas, qhat0, initEner, muSquare);      
       qhatLoc = qhatLoc * flowFactor;
 
+      qhatLoc1= GeneralQhatFunction(QhatParametrizationType, tempLoc1, sdLoc1, alphas, qhat0, initEner, muSquare);      
+      qhatLoc1 = qhatLoc1 * flowFactor1;
+
+      qhatLoc2 = GeneralQhatFunction(QhatParametrizationType, tempLoc2, sdLoc2, alphas, qhat0, initEner, muSquare);      
+      qhatLoc2 = qhatLoc2 * flowFactor2;
+
+      qhatLoc3 = GeneralQhatFunction(QhatParametrizationType, tempLoc3, sdLoc3, alphas, qhat0, initEner, muSquare);      
+      qhatLoc3 = qhatLoc3 * flowFactor3;
+
+      qhatLoc4 = GeneralQhatFunction(QhatParametrizationType, tempLoc4, sdLoc4, alphas, qhat0, initEner, muSquare);      
+      qhatLoc4 = qhatLoc4 * flowFactor4;
+
       //JSINFO << "check qhat --  ener, T, qhat: " << initEner << " , " << tempLoc << " , " << qhatLoc;
     } else { // outside the QGP medium
       qhatLoc = 0.0;
+      qhatLoc1 = 0.0;
+      qhatLoc2 = 0.0;
+      qhatLoc3 = 0.0;
+      qhatLoc4 = 0.0;
     }
 
     qhatTab1D[i] =
-        qhatLoc / sqrt(2.0); // store qhat value in light cone coordinate
+        (qhatLoc + qhatLoc1 + qhatLoc2 + qhatLoc3 + qhatLoc4)/(5*sqrt(2.0)); // store qhat value in light cone coordinate
   }
 
   for (int i = 0; i < dimQhatTab; i++) { // dim of loc
@@ -5346,3 +5567,13 @@ void Matter::read_tables() { // intialize various tables for LBT
   }
   fileF.close();
 }
+
+//void Matter::Clear() 
+//{
+//  delete[] qhatTab1D;
+//  for (int i=0;i<dimQhatTab;i++)
+//  {
+//    delete[] qhatTab2D[i];
+//  }
+//  delete[] qhatTab2D;
+//}

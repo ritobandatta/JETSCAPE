@@ -18,6 +18,18 @@
 
 #include "JetEnergyLossModule.h"
 #include "Pythia8/Pythia.h"
+#include <TVector3.h>
+#include <TRotation.h>
+#include "JetScapeLogger.h"
+#include "JetScapeParticles.h"
+#include <string>
+
+#include <iostream>
+#include <TVector3.h>
+#include "FluidDynamics.h"
+#include <GTL/dfs.h>
+
+#define MAGENTA "\033[35m"
 
 using namespace Jetscape;
 
@@ -35,7 +47,6 @@ public:
                     vector<Parton> &pOut);
   void WriteTask(weak_ptr<JetScapeWriter> w);
   void Dump_pIn_info(int i, vector<Parton> &pIn);
-
   double generate_L(double form_time);
   double sudakov_Pgg(double g0, double g1, double loc_c, double E);
   double sud_val_GG(double h0, double h1, double h2, double loc_d, double E1);
@@ -108,9 +119,10 @@ public:
 
   bool matter_on, in_vac, brick_med, recoil_on, broadening_on;
   double hydro_Tc, qhat0, alphas, brick_length, vir_factor;
-  double initR0, initRx, initRy, initRz, initVx, initVy, initVz, initRdotV,
+  double QhatCone_r,initR0, initRx, initRy, initRz, initVx, initVy, initVz, initRdotV,
       initVdotV, initEner;
   double Q00, Q0, T0;
+
 
   static const int dimQhatTab = 151;
   double qhatTab1D[dimQhatTab] = {0.0};
