@@ -78,14 +78,15 @@ void PGun::Exec() {
   //JSINFO << BOLDYELLOW << " Mass = " << mass ;
   pT = fixed_pT; //max_pT*(rand()/maxN);
 
-  phi = 2.0 * PI * (rand() / maxN);
-  rapidity = 0; //2.0*eta_cut*(rand()/maxN)-eta_cut;
+  //phi = 2.0 * PI * (rand() / maxN);
+  rapidity = 0.5*std::log((1+sqrt(2))/(1-sqrt(2))); //2.0*eta_cut*(rand()/maxN)-eta_cut;
   phi = 0.0;
 
-  p[1] = pT * cos(phi);
-  p[2] = pT * sin(phi);
-  p[3] = sqrt(pT * pT + mass * mass) * sinh(rapidity);
-  p[0] = sqrt(pT * pT + mass * mass) * cosh(rapidity);
+  p[1] =70.71;// pT * cos(phi);
+  p[2] = 0;//pT * sin(phi);
+  p[3] = 70.71;//sqrt(pT * pT + mass * mass) * sinh(rapidity);
+  pT = 70.71;
+  p[0] = 70.71 * sqrt(2);//cosh(rapidity);
 
   double p_abs = std::sqrt(pT*pT + p[3]*p[3]);
   if(std::abs(p_abs - p[3]) > rounding_error){
