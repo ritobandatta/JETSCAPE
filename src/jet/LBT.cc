@@ -187,7 +187,11 @@ void LBT::DoEnergyLoss(double deltaT, double time, double Q2,
       }
       return;
     }
-
+    //No processing when virtuality below 1GeV
+    if (pIn[i].t()<1){
+        pOut.push_back(pIn[i]);
+        return;
+     }
     // pass particle infomation to LBT array (only pass one particle each time)
 
     jetClean();
