@@ -1,0 +1,5 @@
+I am starting a new thread for this. It now seems that there is no clear enhancement from IPGLASMA for the jet v_2. I want to do one more short project. I want you to go into pGun and set up the starting location of the hard scattering to be similar to that in pythiaGun, that is sampled from the binary collision profile by the initial state module (and not set at 0,0)
+Then run pGun in vacuum, for a 100GeV gluon and cluster the final hadrons into jets with R =0.4. Calculate the mean energy of these jets.
+Then I want you to run pGun simulations with a 100 GeV gluon going along the event angle (as given by the hydro event) and separate simulations for a 100 GeV gluon going at 90 degrees to  the event angle. Both at rapidity y = 0.
+Then find the mean energy of jets with R=0.4, both along the event angle, and at 90 deg. to the event angle. (edited) 
+@Prof. Abhijit Majumder
