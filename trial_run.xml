@@ -1,0 +1,48 @@
+?xml version="1.0"?>
+
+<jetscape>
+  
+  <nEvents> 10 </nEvents>
+  <nEvents_printout> 1 </nEvents_printout>
+  <outputFilename>test_out</outputFilename>
+  <JetScapeWriterFinalStateHadronsAscii> on </JetScapeWriterFinalStateHadronsAscii>
+  <JetScapeWriterFinalStatePartonsAscii> on </JetScapeWriterFinalStatePartonsAscii>
+  <Random>
+    <seed>2</seed>
+  </Random>
+
+  <IS> 
+    <initial_profile_path>../examples/test_hydro_files</initial_profile_path>
+    <!--initial_Ncoll_list>../examples/test_hydro_files</initial_Ncoll_list-->
+  </IS>
+
+  <!-- Hard Process -->
+  <Hard>
+    <!--PythiaGun>
+      <pTHatMin>25</pTHatMin>
+      <pTHatMax>30</pTHatMax>
+      <eCM>200</eCM>
+    </PythiaGun-->
+    <PGun></PGun>
+  </Hard>
+  
+  <!--Eloss Modules -->
+  <Eloss>
+    <formTime> -0.1</formTime>
+    <maxT>0.4</maxT>
+    <Matter> 
+      <Q0> 1.0 </Q0>
+      <in_vac> 1 </in_vac>
+      <vir_factor> 0.25 </vir_factor>
+      <recoil_on> 0 </recoil_on>
+      <broadening_on> 0 </broadening_on>
+      <brick_med> 0 </brick_med>
+    </Matter>
+  </Eloss>
+  
+  <!-- Jet Hadronization Module -->
+  <!--JetHadronization>
+    <name>colorless</name>
+  </JetHadronization-->
+  
+</jetscape>
