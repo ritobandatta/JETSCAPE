@@ -110,8 +110,9 @@ void PGun::Exec() {
     xLoc[2] = y;
   }
 
-  xLoc[1] = 0.0;
-  xLoc[2] = 0.0;
+  //xLoc[1] = 0.0;
+  //xLoc[2] = 0.0;
+  JSINFO<< "Adding particle with pid = " <<  parID<< " at x=" << xLoc[1] << ", y=" << xLoc[2] << ", z=" << xLoc[3];
 
   auto ptn = make_shared<Parton>(0, parID, 0, pT, pseudorapidity, phi, p[0], xLoc);
   ptn->set_color((parID > 0) ? 100 : 0);

@@ -283,7 +283,7 @@ void PythiaGun::Exec() {
   //for(int np = 0; np<2; ++np){
 
   // Accept them all
-
+  JSINFO<< "Adding particle with pid = " << " particle is "<< " at x=" << xLoc[1] << ", y=" << xLoc[2] << ", z=" << xLoc[3];
   int hCounter = 0;
   for (int np = 0; np < p62.size(); ++np) {
     Pythia8::Particle &particle = p62.at(np);
