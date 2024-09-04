@@ -23,6 +23,8 @@
 
 using namespace std;
 
+int pthat_bins[33][2] = {{1500,2510}, {800,1500}, {450, 800}, {350, 450}, {300, 350}, {280, 300}, {260, 280}, {240, 260}, {220, 240}, {210, 220}, {200, 210}, {190, 200}, {180,190}, {170, 180}, {160, 170}, {150, 160}, {140, 150}, {130, 140}, {120, 130}, {110, 120},  {100, 110}, {90,100},  {80,90}, {70,80}, {60, 70}, {55, 60}, {50, 55},  {45, 50}, {40, 45}, {35, 40}, {30, 35}, {25, 30}, {20,25}};
+
 // Register the module with the base class
 RegisterJetScapeModule<PythiaGun> PythiaGun::reg("PythiaGun");
 
@@ -163,6 +165,9 @@ void PythiaGun::Exec() {
   VERBOSE(1) << "Run Hard Process : " << GetId() << " ...";
   VERBOSE(8) << "Current Event #" << GetCurrentEvent();
 
+  pTHatMin=pthat_bins[GetCurrentEvent()/100][0];
+  pTHatMax=pthat_bins[GetCurrentEvent()/100][1];
+	
   bool flag62 = false;
   vector<Pythia8::Particle> p62;
 
