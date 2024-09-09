@@ -1,0 +1,12 @@
+- Smash needs gcc of version 8 or above, WSU grid has option to load gnu9/9.3.1 by doing "module load gnu9/9.1.0". You might need to unload the present gnu verison first. 
+- This would automatically deactivate many of the other packages, so you would need to manually install SMASH/JETSCAOE dependent packages.
+- Download ROOT source and build it in grid. I use ROOT 6.28/12 (install it in a generic location/ can not do globally). Working with the precompiled binary never worked for me.  
+- Download eigen (eigen-3.3.9) ($(HOME))
+- Download gsl (gsl-2.7.1 ) ($(HOME))
+- Download Boost (boost_1_71_0 ) ($(HOME))
+- Download Pythia8309 (build it using gcc (GCC) 9.3.1 ) ($(HOME))
+- Update external_packages/get_smash.sh as done in this branch (loation could be different, dpending on where you install the packages)
+- One this is done, update the ~./bash_profile as given in the branch. (JETSPACE/.bash_profile), do source ~/.bash_profile to implement the changes
+- Once smash is loaded properly, go inside .bash_profile and uncomment the part exporting SMASh location
+- source ~/.bash_profile to save the changes
+- do cmake .. -DUSE_SMASH=ON to build jetscape with smash 
