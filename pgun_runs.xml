@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+
+<jetscape>
+  
+  <nEvents> 10000 </nEvents>
+  <setReuseHydro> true </setReuseHydro>
+  <nReuseHydro> 1000 </nReuseHydro>
+ <debug>off</debug> 
+ <vlevel> 0 </vlevel>
+
+  <outputFilename>pgun_test</outputFilename>
+  <JetScapeWriterFinalStateHadronsAscii> off </JetScapeWriterFinalStateHadronsAscii>
+  <JetScapeWriterFinalStatePartonsAscii> off </JetScapeWriterFinalStatePartonsAscii>
+
+   <Random>
+    <seed>2</seed>
+  </Random>
+  <!-- Inital State Module  -->
+  <IS>
+    <!-- initial_profile_path  /wsu/home/groups/maj-shen/JETSCAPEDataFile/HydroProfiles/5020GeV_0-10  initial_profile_path -->
+     <initial_profile_path>/rs/rs_grp_majshen/tier1/JETSCAPEDataFile/HydroProfiles/5020GeV_0-5</initial_profile_path>
+  </IS> 
+
+  <!-- Hard Process -->
+  <Hard>
+    <PGun>
+    </PGun>
+  </Hard>
+
+   <!--Preequilibrium Dynamics Module -->
+  <Preequilibrium>
+    <NullPreDynamics> </NullPreDynamics>
+  </Preequilibrium>
+
+   <!-- Hydro  Module  -->
+  <Hydro>
+    <hydro_from_file>
+      <name>Hydro from file </name>
+      <read_in_multiple_hydro>1</read_in_multiple_hydro>
+      <!-- hydro_files_folder  /wsu/home/groups/maj-shen/JETSCAPEDataFile/HydroProfiles/5020GeV_0-10 hydro_files_folder -->
+      <hydro_files_folder>/rs/rs_grp_majshen/tier1/JETSCAPEDataFile/HydroProfiles/5020GeV_0-5</hydro_files_folder>
+    </hydro_from_file>
+  </Hydro>
+
+  <!--Eloss Modules -->
+  <Eloss>
+    <maxT>0.2</maxT>
+    <Matter> 
+      <Q0> 1.0 </Q0>
+      <in_vac> 0 </in_vac>
+      <vir_factor> 0.25 </vir_factor>
+      <recoil_on> 0 </recoil_on>
+      <broadening_on> 0 </broadening_on>
+      <brick_med> 0 </brick_med>
+    </Matter>
+  </Eloss>
+  
+  <!-- Jet Hadronization Module -->
+
+  
+</jetscape>
+
