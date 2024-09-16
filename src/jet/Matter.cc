@@ -465,7 +465,14 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
     if (pIn[i].form_time() <
         0.0) /// A parton without a virtuality or formation time, must set...
     {
-
+      //SAVED THE QHAT TABLE IN A FILE   
+      ofstream qhat_file;
+      qhat_file.open("qhat_0-5.txt",ios::app);
+      for(int qhat_index=0;qhat_index<151;qhat_index+=1){
+           qhat_file<<i*0.1<<" "<<qhatTab1D[qhat_index]<<"\n";       
+      }
+      qhat_file<<"\n";
+	    
       VERBOSE(8) << BOLDYELLOW << " pid = " << pIn[i].pid()
                  << " E = " << pIn[i].e();
 
