@@ -1515,6 +1515,8 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
 
       } else { // not time to split yet broadening it
 
+
+
         if (broadening_on) {
 
           double now_zeta =
@@ -1681,7 +1683,26 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
         } // end if(broadening_on)
           pOut.push_back(pIn[i]);
       }
-    } else { // virtuality too low lets broaden it
+    } 
+    else if(Q0*Q0>=pIn[i].t() && now_temp <= T0 && recoil_on){
+      	//keeping the virtuality constanct at all step
+	      if (pIn[i].get_virtuality()<0){
+		      pIn[i].set_virtuality(pIn[i].t());
+	      }
+
+        double splitTime = pIn[i].form_time()+pIn[i].x_in().t();
+	      if(splitTime<time){
+          DecideSplitType(pIn[i]);
+          AssignColor(pIn[i]);
+          double tQd1,tQd2;
+          AssignDaughterVirtuality(pIn[i],tQd1,tQd2);
+          Kinematics(pIn[i],pOut,mod_jet_v,jet_stat,tQd1,tQd2,time);
+        }
+    }
+    
+    else { // virtuality too low lets broaden it
+
+
 
       if (broadening_on) {
 
@@ -4074,3 +4095,475 @@ void Matter::read_tables() { // intialize various tables for LBT
   }
   fileF.close();
 }
+
+
+
+
+
+
+
+void Matter::DecideSplitType(Parton PIn_i){
+		double z_low,z_hi;
+		double val,val1,val2,val3,val4;
+		double ratio1, ratio2, ratio3, r, r2;
+		double ProbGluon, ProbPhoton;
+		double M, relative_charge;
+    double t_used = PIn_i.get_virtuality();
+    double particle_nu = PIn_i.nu();
+		double tau_form = 2.0 * particle_nu / t_used;
+    int pid = PIn_i.pid();
+
+		//gluon
+		if (PIn_i.pid()==gid){
+      z_low = QS * QS / t_used / 2.0;
+      z_hi = 1.0 - z_low;
+			val1 = SplittingFunction::P_z_gg_int(z_low, z_hi, zeta, t_used, tau_form, particle_nu,*this);
+			val2 = nf * SplittingFunction::P_z_qq_int(z_low, z_hi, zeta, t_used, tau_form, particle_nu,*this);
+
+
+			//charm quark
+			M=PythiaFunction.particleData.m0(cid);
+			z_low = (QS * QS + 2.0 * M * M) / t_used / 2.0;
+			z_hi = 1.0 - z_low;
+        	if (z_hi > z_low){
+        	    val3 = SplittingFunction::P_z_qq_int_w_M_vac_only(M, z_low, z_hi, zeta, t_used,tau_form, particle_nu,*this);		
+        	}
+        	if (t_used < (QS * QS + 2.0 * M * M)){
+        	    val3 = 0.0;
+        	}
+
+        	//bottom quark
+        	M = PythiaFunction.particleData.m0(bid);
+        	z_low = (QS * QS + 2.0 * M * M) / t_used / 2.0;
+        	z_hi = 1.0 - z_low;
+        	val4 = 0.0;
+        	if (z_hi > z_low){
+        	    val4 = SplittingFunction::P_z_qq_int_w_M_vac_only(M, z_low, z_hi, zeta, t_used,tau_form, particle_nu,*this);
+        	}
+        	if (t_used < (QS * QS + 2.0 * M * M)){
+        	    val4 = 0.0;
+        	}
+          
+        	VERBOSE(8) << BOLDYELLOW << " val1 = " << val1 << " val2 = " << val2<< " val3 = " << val3 << " val4 = " << val4;   
+
+        	if (val1 < 0.0 || val2 < 0.0 || val3 < 0.0 || val4 < 0.0) {
+        	    cerr << " minus log of sudakov negative val1 , val2 , val3, val4 = "
+        	         << val1 << "  " << val2 << "  " << val3 << "  " << val4
+        	         << endl;
+        	    throw std::runtime_error("minus log of sudakov negative");
+        	} 
+
+        	ratio1 = val1 / (val1 + val2 + val3 + val4);
+        	ratio2 = (val1 + val2) / (val1 + val2 + val3 + val4);
+        	ratio3 = (val1 + val2 + val3) / (val1 + val2 + val3 + val4);
+        	r = ZeroOneDistribution(*GetMt19937Generator());           
+
+        	if (r >= ratio1 && r < ratio2) { // qqbar
+
+            	r2 = ZeroOneDistribution(*GetMt19937Generator());
+
+        	    // assign flavors
+        	    if (r2 > 0.6666) {
+        	      pid_a = uid;
+        	      pid_b = -1 * uid;
+        	    } 
+        	    else if (r2 > 0.3333) {
+        	      pid_a = did;
+        	      pid_b = -1 * did;  
+            	} 
+            	else {
+              		pid_a = sid;
+              		pid_b = -1 * sid;
+            	}
+            	iSplit = 2;
+        	}
+        	else if (r >= ratio2 && r < ratio3) {
+            	pid_a = cid;
+            	pid_b = -cid;
+            	iSplit = 4;
+            	VERBOSE(1) << BOLDYELLOW << " split to c c-bar";
+        	}
+        	else if (r >= ratio3) {
+        	    pid_a = bid;
+        	    pid_b = -bid;
+        	    iSplit = 5;
+            	VERBOSE(1) << BOLDYELLOW << " Split to b b-bar ";
+        	}
+        	else { // gg
+            	pid_a = gid;
+            	pid_b = gid;
+            	iSplit = 1;
+        	}
+    	}
+     	else if (std::abs(PIn_i.pid()) < 4) { // we had a light quark
+
+          	if ((std::abs(PIn_i.pid()) > 0) && (std::abs(PIn_i.pid()) < 4)){
+            	relative_charge = 1.0 / 9.0;
+          	}
+          	if (std::abs(PIn_i.pid()) == 2){
+            	relative_charge = relative_charge * 4.0;
+            }
+          	if (std::abs(PIn_i.pid()) == 4){
+            	relative_charge = 4.0 / 9.0;
+            }
+          	if (std::abs(PIn_i.pid()) == 5){
+            	relative_charge = 1.0 / 9.0;
+            }
+
+          	ProbGluon = 1.0 - SudakovFunction::sudakov_Pqg(QS * QS / 2, t_used, zeta, particle_nu,*this);
+          	ProbPhoton =1.0 - std::pow(SudakovFunction::sudakov_Pqp(QS * QS / 2, t_used, zeta, particle_nu,*this),relative_charge);
+
+          	val = ProbGluon / (ProbGluon + ProbPhoton);
+
+          	VERBOSE(8) << MAGENTA<< " probability of gluon radiation from quark = " << val;
+
+          	r2 = ZeroOneDistribution(*GetMt19937Generator());
+
+          	if (r2 <= val) { // light quark decay to quark and gluon
+            	pid_a = pid;
+            	pid_b = gid;
+            	iSplit = 0; // iSplit for quark radiating a gluon
+          	}
+          	else {      // light quark decay to quark and photon
+            	pid_a = pid;
+            	pid_b = photonid;
+            	iSplit = 3; // iSplit for quark radiating a photon
+            	photon_brem = true;
+          	}
+        }
+        else {
+          	// we had a heavy quark
+          	pid_a = pid;
+          	pid_b = gid;
+          	iSplit = 0;
+        }
+	}
+
+void Matter::AssignColor(Parton& PIn_i){
+
+        if (iSplit != 3) // not photon radiation, generate new colors
+        {
+          	max_color = PIn_i.max_color();
+          	//if (PIn_i.anti_color()>maxcolor) color = PIn_i.anti_color();
+          	JSDEBUG << " old max color = " << max_color;
+          	max_color = ++MaxColor;
+          	color = max_color;
+          	anti_color = max_color;
+          	PIn_i.set_max_color(max_color);
+          	JSDEBUG << " new color = " << color;
+        }
+
+        if (iSplit == 1) ///< gluon splits into two gluons
+        {
+        	d1_col = PIn_i.color();
+          	d2_col = color;
+          	d1_acol = anti_color;
+          	d2_acol = PIn_i.anti_color();
+        } 
+        else if (iSplit ==0) ///< (anti-)quark splits into (anti-)quark + gluon, covers both light and heavy quarks (anti-quarks)
+        {
+          	if (PIn_i.pid() > 0) // parent is a quark
+          	{
+            	d1_col = color;
+            	d1_acol = 0;
+            	d2_col = PIn_i.color();
+            	d2_acol = anti_color;
+          	}
+          	else {
+            	d1_col = 0; // parent is an anti-quark
+            	d1_acol = anti_color;
+            	d2_col = color;
+            	d2_acol = PIn_i.anti_color();
+          	}
+        } 
+        else if (iSplit == 2 || iSplit == 4 ||iSplit ==5) // gluon splits into quark anti-quark, c anti-c, b anti-b
+        {
+          	d1_col = PIn_i.color();
+          	d1_acol = 0;
+          	d2_acol = PIn_i.anti_color();
+          	d2_col = 0;
+        } 
+        else if (iSplit ==3) // radiating a photon has col = acol = 0, all color remains in quark(anti-quark)
+        {
+          	d1_col = PIn_i.color();
+          	d1_acol = PIn_i.anti_color();
+          	d2_col = 0;
+          	d2_acol = 0;
+        } 
+        else {
+          	throw std::runtime_error("error in iSplit");
+        }
+	}
+
+void Matter::AssignDaughterVirtuality(Parton& PIn_i,double& tQd1, double& tQd2){
+		z = generate_vac_z_w_M(PIn_i.pid(), PIn_i.restmass(), QS * QS / 2.0, PIn_i.get_virtuality(), zeta, PIn_i.nu(), iSplit);
+ 		VERBOSE(8) << MAGENTA << " generated z = " << z;
+
+        tQd1 = z * z * PIn_i.get_virtuality();
+        tQd2 = (1.0 - z) * (1.0 - z) * PIn_i.get_virtuality();
+        if (iSplit == 3) {
+            tQd2 = rounding_error; // forcing the photon to have no virtuality
+        }
+	}
+
+void Matter::Kinematics(Parton& PIn_i,std::vector<Parton> &pOut, double mod_jet_v,int jet_stat,double tQd1, double tQd2,double time){
+		double c_t,s_t,c_p,s_p;
+    double new_parent_p0, new_parent_px, new_parent_py, new_parent_pz, new_parent_t, new_parent_pl, new_parent_nu;
+    double k_perp1[4], k_perp2[4],k_perp1_2,k_perp2_2;
+		double energy,plong,newp[4],newx[4];      
+		double M;
+
+
+		c_t=PIn_i.jet_v().z() /mod_jet_v;
+		s_t = std::sqrt(1.0 - c_t * c_t);
+		s_p = PIn_i.jet_v().y() / std::sqrt(pow(PIn_i.jet_v().x(), 2) + pow(PIn_i.jet_v().y(), 2));
+		c_p = PIn_i.jet_v().x() / std::sqrt(pow(PIn_i.jet_v().x(), 2) + pow(PIn_i.jet_v().y(), 2));
+
+        VERBOSE(8) << BOLDYELLOW
+                   << " Jet direction w.r.t. beam: theta = " << std::acos(c_t)
+                   << " phi = " << std::acos(c_p);
+
+        new_parent_p0 = PIn_i.e();
+        new_parent_px = PIn_i.px();
+        new_parent_py = PIn_i.py();
+        new_parent_pz = PIn_i.pz();
+        new_parent_t = PIn_i.get_virtuality();
+        new_parent_pl = (new_parent_px * PIn_i.jet_v().x() + new_parent_py * PIn_i.jet_v().y() + new_parent_pz * PIn_i.jet_v().z())/mod_jet_v;
+        new_parent_nu = (new_parent_p0 + new_parent_pl) / sqrt(2.0);
+
+        k_perp1[0] = 0.0;
+        k_perp1[1] = z * (new_parent_px - new_parent_pl * s_t * c_p);
+        k_perp1[2] = z * (new_parent_py - new_parent_pl * s_t * s_p);
+        k_perp1[3] = z * (new_parent_pz - new_parent_pl * c_t);
+        k_perp1_2 = pow(k_perp1[1], 2) + pow(k_perp1[2], 2) + pow(k_perp1[3], 2);        
+
+        M=0;
+        if ((std::abs(pid_a) == 4) || (std::abs(pid_a) == 5)){
+          	M = PythiaFunction.particleData.m0(pid_a);
+        }
+
+        energy = (z * new_parent_nu + (tQd1 + k_perp1_2 + M * M) /(2.0 * z * new_parent_nu)) /std::sqrt(2.0);
+        plong = (z * new_parent_nu - (tQd1 + k_perp1_2 + M * M) /(2.0 * z * new_parent_nu)) /std::sqrt(2.0);
+ 
+        if (energy < 0.0) {
+          JSWARN << " Energy negative after rotation, press 1 and return to "
+                    "continue ";
+          cin >> blurb;
+        }
+
+        newp[0] = energy;
+        newp[1] = plong * s_t * c_p + k_perp1[1];
+        newp[2] = plong * s_t * s_p + k_perp1[2];
+        newp[3] = plong * c_t + k_perp1[3];
+
+        VERBOSE(8) << MAGENTA << " D1 px = " << newp[1] << " py = " << newp[2]
+                   << " pz = " << newp[3] << " E = " << newp[0];
+
+        newx[0] = time;
+        for (int j = 1; j <= 3; j++) {
+          newx[j] = PIn_i.x_in().comp(j) + (time - PIn_i.x_in().comp(0)) * velocity[j];
+        }
+
+
+
+        pOut.push_back(Parton(0, pid_a, jet_stat, newp, newx));
+        int iout = pOut.size() - 1;
+
+        if (std::isnan(newp[1]) || std::isnan(newp[2]) || std::isnan(newp[3])) {
+          	JSINFO << MAGENTA << plong << " " << s_t << " " << c_p << " "<< k_perp1[1];
+          	JSINFO << MAGENTA << newp[0] << " " << newp[1] << " " << newp[2]<< " " << newp[3];
+          	cin >> blurb;
+        }
+
+        pOut[iout].set_jet_v(velocity_jet); // use initial jet velocity
+        pOut[iout].set_mean_form_time_hybrid();
+        double ft = generate_L(pOut[iout].mean_form_time());
+        pOut[iout].set_form_time(ft);
+        pOut[iout].set_color(d1_col);
+        pOut[iout].set_anti_color(d1_acol);
+        pOut[iout].set_max_color(max_color);
+        pOut[iout].set_min_color(PIn_i.min_color());
+        pOut[iout].set_min_anti_color(PIn_i.min_anti_color());
+
+        AddPerpComp(pOut);	//adds perp compoment to the radiated parton;
+
+        VERBOSE(8) << BOLDRED << " virtuality of D 1 = " << pOut[iout].t();
+        VERBOSE(8) << BOLDRED << " mass of parton = " << pOut[iout].restmass();
+
+
+
+
+        k_perp2[0] = 0.0;
+        k_perp2[1] = (1.0 - z) * (new_parent_px - new_parent_pl * s_t * c_p);
+        k_perp2[2] = (1.0 - z) * (new_parent_py - new_parent_pl * s_t * s_p);
+        k_perp2[3] = (1.0 - z) * (new_parent_pz - new_parent_pl * c_t);
+        k_perp2_2 = pow(k_perp2[1], 2) + pow(k_perp2[2], 2) + pow(k_perp2[3], 2);   
+
+        M = 0.0;
+        if ((std::abs(pid_b) == 4) || (std::abs(pid_b) == 5)){
+          	M = PythiaFunction.particleData.m0(pid_b);
+        }
+
+        energy = ((1.0 - z) * new_parent_nu + (tQd2 + k_perp2_2 + M * M) / (2.0 * (1.0 - z) * new_parent_nu)) /std::sqrt(2.0);
+        plong =((1.0 - z) * new_parent_nu - (tQd2 + k_perp2_2 + M * M) / (2.0 * (1.0 - z) * new_parent_nu)) /std::sqrt(2.0);
+
+
+        if (energy < 0.0) {
+          	JSWARN << " Energy of 2nd daughter negative after rotation, press 1 and return to continue ";
+          	cin >> blurb;
+        }
+
+        newp[0] = energy;
+        newp[1] = plong * s_t * c_p + k_perp2[1];
+        newp[2] = plong * s_t * s_p + k_perp2[2];
+        newp[3] = plong * c_t + k_perp2[3];
+
+        newx[0] = time;
+        for (int j = 1; j <= 3; j++) {
+          newx[j] = PIn_i.x_in().comp(j) + (time - PIn_i.x_in().comp(0)) * velocity[j];
+        }
+
+        if (iSplit != 3) // not a photon
+        {
+          VERBOSE(8) << BOLDRED << " PiD - b = " << pid_b;
+          pOut.push_back(Parton(0, pid_b, jet_stat, newp, newx));
+          iout = pOut.size() - 1;
+          pOut[iout].set_jet_v(velocity_jet); // use initial jet velocity
+          pOut[iout].set_mean_form_time_hybrid();
+          ft = generate_L(pOut[iout].mean_form_time());
+          pOut[iout].set_form_time(ft);
+          pOut[iout].set_color(d2_col);
+          pOut[iout].set_anti_color(d2_acol);
+          pOut[iout].set_max_color(max_color);
+          pOut[iout].set_min_color(PIn_i.min_color());
+          pOut[iout].set_min_anti_color(PIn_i.min_anti_color());
+          pOut[iout].set_virtuality(PIn_i.get_virtuality());
+
+        } else // is a photon
+        {
+          VERBOSE(8) << BOLDRED << " is a photon PiD - b = " << pid_b;
+          pOut.push_back(Photon(0, pid_b, jet_stat, newp, newx));
+          iout = pOut.size() - 1;
+          pOut[iout].set_jet_v(velocity_jet); // use initial jet velocity
+          pOut[iout].set_mean_form_time_hybrid();
+          ft = generate_L(pOut[iout].mean_form_time());
+          pOut[iout].set_form_time(1.0 / rounding_error);
+          pOut[iout].set_color(0);
+          pOut[iout].set_anti_color(0);
+          pOut[iout].set_max_color(max_color);
+          pOut[iout].set_min_color(PIn_i.min_color());
+          pOut[iout].set_min_anti_color(PIn_i.min_anti_color());
+          pOut[iout].set_virtuality(PIn_i.get_virtuality());
+        }
+
+        AddPerpComp(pOut);	//adds perp compoment to the radiated parton;
+	}
+
+void Matter::AddPerpComp(std::vector<Parton> &pOut){
+	double el_p0[5], pc0[4], vc0[4];
+  double tempLoc, qhatLoc, enerLoc, sdLoc;
+	double betaLoc, gammaLoc, flowFactor;
+    double HQ_mass;
+   	double dt_lrf, el_CR;
+    double soln_alphas, prob_el;
+   	double muSquare;
+    double recordE0;
+    int hydro_ctl;
+    int pid0,pid2,pid3;
+    double pc2[4];
+    double pc3[4];
+    double el_vertex[4];
+    int iout = pOut.size() - 1;
+
+	el_p0[0]=pOut[iout].p(0);
+	el_p0[1]=pOut[iout].p(1);
+	el_p0[2]=pOut[iout].p(2);
+	el_p0[3]=pOut[iout].p(3);
+	el_p0[4]=pOut[iout].get_virtuality();
+
+	HQ_mass = pOut[iout].restmass();
+
+
+
+
+
+  el_vertex[0]=pOut[iout].x_in().comp(0);
+	el_vertex[1] = pOut[iout].x_in().comp(1);
+	el_vertex[2] = pOut[iout].x_in().comp(2);
+	el_vertex[3] = pOut[iout].x_in().comp(3);
+
+
+
+  // Convert hard parton momentum to onshell
+  pc0[1] = el_p0[1];
+  pc0[2] = el_p0[2];
+  pc0[3] = el_p0[3];
+  if (abs(pOut[iout].pid()) == 4 || abs(pOut[iout].pid()) == 5){
+        pc0[0] = sqrt(pc0[1] * pc0[1] + pc0[2] * pc0[2] + pc0[3] * pc0[3] + HQ_mass * HQ_mass);
+  }    
+  else{
+        pc0[0] = sqrt(pc0[1] * pc0[1] + pc0[2] * pc0[2] + pc0[3] * pc0[3]);
+  }
+  recordE0 = pc0[0];
+
+  std::unique_ptr<FluidCellInfo> check_fluid_info_ptr;
+  GetHydroCellSignal(el_vertex[0], el_vertex[1], el_vertex[2], el_vertex[3], check_fluid_info_ptr);
+  tempLoc = check_fluid_info_ptr->temperature;
+  sdLoc = check_fluid_info_ptr->entropy_density;
+  vc0[1] = check_fluid_info_ptr->vx;
+  vc0[2] = check_fluid_info_ptr->vy;
+  vc0[3] = check_fluid_info_ptr->vz;   
+
+ 
+	pid0=pOut[iout].pid();
+
+	trans(vc0,pc0);
+	elasticCollision.elastic_kinematics(tempLoc,pid0,pid2,pid3,pc0,pc2,pc3);
+
+	transback(vc0,pc0);
+	transback(vc0,pc2);   
+	transback(vc0,pc3); 
+
+  if (pc0[0] < pc2[0] && abs(pid0) != 4 && pid0 == pid2) { //disable switch for heavy quark, only allow switch for identical particles
+    double p0temp[4] = {0.0};
+    for (int k = 0; k <= 3; k++) {
+      p0temp[k] = pc2[k];
+      pc2[k] = pc0[k];
+      pc0[k] = p0temp[k];
+    }
+  }
+
+  if (pc2[0] < rounding_error || pc3[0] < rounding_error){
+    return;
+  }
+
+    pc0[0]=el_p0[0]+pc0[0]-recordE0;
+    pOut[iout].reset_p_hybrid(pc0[1],pc0[2],pc0[3],pc0[0]); //giving perp momentum
+
+    pOut.push_back(Parton(0, pid2, 1, pc2, el_vertex)); // recoiled
+    iout = pOut.size() - 1;
+    pOut[iout].set_jet_v(velocity_jet); // use initial jet velocity
+    /// a really large formation time.
+    pOut[iout].set_form_time(10000.0);
+    pOut[iout].set_color(0);
+    pOut[iout].set_anti_color(0);
+    pOut[iout].set_max_color(pOut[iout-1].max_color());
+    pOut[iout].set_min_color(pOut[iout-1].min_color());
+    pOut[iout].set_min_anti_color(pOut[iout-1].min_anti_color());
+
+
+
+      pOut.push_back(Parton(0, pid3, -1, pc3, el_vertex)); // back reaction
+      iout = pOut.size() - 1;
+      pOut[iout].set_jet_v(velocity_jet);
+      pOut[iout].set_mean_form_time();
+      //  ft = 10000.0; /// STILL a really large formation time.
+      pOut[iout].set_form_time(10000.0);
+      pOut[iout].set_color(0);
+      pOut[iout].set_anti_color(0);
+      pOut[iout].set_max_color(pOut[iout-1].max_color());
+      pOut[iout].set_min_color(pOut[iout-1].min_color());
+      pOut[iout].set_min_anti_color(pOut[iout-1].min_anti_color());
+}
+
+

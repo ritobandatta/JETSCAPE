@@ -136,8 +136,10 @@ public:
 
   double z = 0.5;
   double blurb, zeta, tQ2;
-  int iSplit, pid_a, pid_b;
-  unsigned int max_color, min_color, min_anti_color;
+  int iSplit, pid_a, pid_b; //ivan added
+  unsigned int d1_col, d1_acol, d2_col, d2_acol, color, anti_color; //ivan added
+  unsigned int max_color, min_color, min_anti_color;  //ivan added
+
   double velocity[4], xStart[4], velocity_jet[4];
   bool photon_brem = false;
 
@@ -174,6 +176,13 @@ public:
   double Mqc2qc(double s, double t, double M);
   void collHQ22(int CT, double temp, double qhat0ud, double v0[4], double p0[4],
                 double p2[4], double p3[4], double p4[4], double &qt);
+
+
+  void DecideSplitType(Parton PIn_i);
+  void AssignColor(Parton& PIn_i); 
+  void AssignDaughterVirtuality(Parton& PIn_i,double& tQd1, double& tQd2);
+  void Kinematics(Parton& PIn_i,std::vector<Parton> &pOut, double mod_jet,int jet_stat,double tQd1, double tQd2,double time);
+  void AddPerpComp(std::vector<Parton> &pOut);
 
 ElasticCollision elasticCollision;
 protected:
