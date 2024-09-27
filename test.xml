@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+
+<jetscape>
+  
+  <nEvents> 10 </nEvents>
+  
+  <outputFilename>test_out_0.2</outputFilename>
+  <JetScapeWriterAscii> on </JetScapeWriterAscii>
+  <JetScapeWriterFinalStatePartonsAscii> on </JetScapeWriterFinalStatePartonsAscii>
+
+  <!-- Inital State Module  -->
+  <!--IS>
+    <Trento> </Trento>
+  </IS-->
+  
+  <!-- Hard Process -->
+  <Hard>
+    <PGun>
+    <pT>50</pT>
+    </PGun>
+  </Hard>
+  
+  <!--Preequilibrium Dynamics Module -->
+  <!--Preequilibrium>
+    <NullPreDynamics> </NullPreDynamics>
+  </Preequilibrium-->
+  
+  <!-- Hydro  Module  -->
+  <Hydro>
+    <Brick bjorken_expansion_on="false" start_time="0.6">
+      <name>Brick</name>
+      <T>0.2</T>
+
+    </Brick> 
+ </Hydro>
+  
+  <!--Eloss Modules -->
+  <Eloss>
+    <Matter>
+	    <in_vac> 0 </in_vac>
+      <brick_med> 1 </brick_med> 
+      <brick_length> 4.0 </brick_length>  
+      <recoil_on> 1 </recoil_on>      
+    </Matter>
+
+  </Eloss>
+  
+  <!--PartonPrinter>
+      <FileName>./FinalPartonsInfo.dat</FileName>
+  </PartonPrinter-->
+  
+  <!-- Jet Hadronization Module -->
+  <!--JetHadronization>
+    <name>colorless</name>
+  </JetHadronization-->
+ 
+</jetscape>
