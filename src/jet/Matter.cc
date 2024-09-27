@@ -31,7 +31,7 @@ using namespace Jetscape;
 using namespace std;
 
 const double QS = 0.9;
-
+ofstream myfile("virtuality_change.txt",ios::app);
 // Register the module with the base class
 RegisterJetScapeModule<Matter> Matter::reg("Matter");
 
@@ -92,7 +92,7 @@ Matter::Matter() {
   NUM1 = 0;
 }
 
-Matter::~Matter() { VERBOSE(8); }
+Matter::~Matter() { VERBOSE(8);myfile.close(); }
 
 void Matter::Init() {
   JSINFO << "Initialize Matter ...";
@@ -936,7 +936,7 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
           el_p0[4] = el_p0[0] * el_p0[0] - pc0[0] * pc0[0];
           if (el_p0[4] < 0)
             cout << "complain negative virt" << endl;
-
+	  myfile<<el_time<<" "<<el_p0[4]<<"\n";
         } // end time loop for elastic scattering
 
         // do split
