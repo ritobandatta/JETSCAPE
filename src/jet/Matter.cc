@@ -21,7 +21,7 @@
 #include <string>
 
 #include <iostream>
-
+#include <fstream>
 #include "FluidDynamics.h"
 #include <GTL/dfs.h>
 
@@ -30,8 +30,11 @@
 using namespace Jetscape;
 using namespace std;
 
-const double QS = 0.9;
 ofstream myfile("virtuality_change.txt",ios::app);
+ofstream myfile1("virtualityParent_change.txt",ios::app);
+
+const double QS = 0.9;
+
 // Register the module with the base class
 RegisterJetScapeModule<Matter> Matter::reg("Matter");
 
@@ -92,7 +95,7 @@ Matter::Matter() {
   NUM1 = 0;
 }
 
-Matter::~Matter() { VERBOSE(8);myfile.close(); }
+Matter::~Matter() { VERBOSE(8);myfile.close();myfile1.close(); }
 
 void Matter::Init() {
   JSINFO << "Initialize Matter ...";
@@ -268,7 +271,7 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
   VERBOSE(8) << " qhat0 = " << qhat0 << " qhat = " << qhat;
 
   for (int i = 0; i < pIn.size(); i++) {
-
+    //JSINFO<<"sabji is "<<pIn[i].pstat();
     // Reject photons
     if (pIn[i].pid() == photonid) {
       if(pIn[i].pstat() != 22) {
@@ -465,7 +468,10 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
     if (pIn[i].form_time() <
         0.0) /// A parton without a virtuality or formation time, must set...
     {
+      pIn[i].set_stat(505); 
 
+      myfile1<<"Hello \n";
+      myfile<<"Hello \n";
       VERBOSE(8) << BOLDYELLOW << " pid = " << pIn[i].pid()
                  << " E = " << pIn[i].e();
 
@@ -648,6 +654,8 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
       if (splitTime <
           time) // it is time to split and calculate the effect of scattering
       {
+
+
 
         VERBOSE(8) << "SPLIT in MATTER";
 
@@ -936,8 +944,15 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
           el_p0[4] = el_p0[0] * el_p0[0] - pc0[0] * pc0[0];
           if (el_p0[4] < 0)
             cout << "complain negative virt" << endl;
-	  myfile<<el_time<<" "<<el_p0[4]<<"\n";
+
+
+
         } // end time loop for elastic scattering
+
+          if (pIn[i].pstat()==505){
+            myfile<<time<<" "<<el_p0[4]<<"\n";
+            myfile1<<time<<" "<<pIn[i].t()<<"\n";
+          }
 
         // do split
         double t_used = pIn[i].t();
@@ -1404,6 +1419,8 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
         }
         pOut[iout].set_jet_v(velocity_jet); // use initial jet velocity
         pOut[iout].set_mean_form_time();
+        if (pIn[i].pstat()==505){pOut[iout].set_stat(505);}
+        //JSINFO<<"first daughter"<<pOut[iout].pstat();
         double ft = generate_L(pOut[iout].mean_form_time());
         pOut[iout].set_form_time(ft);
         pOut[iout].set_color(d1_col);
@@ -1479,10 +1496,12 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
 
         if (iSplit != 3) // not a photon
         {
-
+         // JSINFO<<"second daughter";
           VERBOSE(8) << BOLDRED << " PiD - b = " << pid_b;
           pOut.push_back(Parton(0, pid_b, jet_stat, newp, newx));
           iout = pOut.size() - 1;
+          pOut[iout].set_stat(5005);
+          //JSINFO<<"seconnd daughter"<<pOut[iout].pstat();
           pOut[iout].set_jet_v(velocity_jet); // use initial jet velocity
           pOut[iout].set_mean_form_time();
           ft = generate_L(pOut[iout].mean_form_time());
@@ -1495,9 +1514,12 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
 
         } else // is a photon
         {
+          //JSINFO<<"second daughter";
           VERBOSE(8) << BOLDRED << " is a photon PiD - b = " << pid_b;
           pOut.push_back(Photon(0, pid_b, jet_stat, newp, newx));
           iout = pOut.size() - 1;
+          pOut[iout].set_stat(5005);
+          //JSINFO<<"seconnd daughter"<<pOut[iout].pstat();
           pOut[iout].set_jet_v(velocity_jet); // use initial jet velocity
           pOut[iout].set_mean_form_time();
           ft = generate_L(pOut[iout].mean_form_time());
@@ -1673,7 +1695,7 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
               energy -= drag;
               pOut[iout].reset_momentum(px, py, pz, energy);
             }
-            pOut[iout].set_stat(101);   
+            //pOut[iout].set_stat(101);   
             VERBOSE(8) << BOLDYELLOW << " p after b & d, E = " << energy
                        << " pz = " << pz << " px = " << px << " py = " << py;
           }
@@ -1833,7 +1855,7 @@ void Matter::DoEnergyLoss(double deltaT, double time, double Q2,
             energy -= drag;
             pOut[iout].reset_momentum(px, py, pz, energy);
           }
-          pOut[iout].set_stat(101);   
+          //pOut[iout].set_stat(101);   
           VERBOSE(8) << BOLDYELLOW << " p after b & d, E = " << energy
                      << " pz = " << pz << " px = " << px << " py = " << py;
         }
